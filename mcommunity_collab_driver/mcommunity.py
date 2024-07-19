@@ -2,7 +2,6 @@ import requests
 
 
 class MCommError(Exception):
-    pass
 
     # Constructor or Initializer
     def __init__(self, value):
@@ -14,7 +13,17 @@ class MCommError(Exception):
 
 
 class MCommClient:
-    def __init__(self, username, password, app_id, full_name, uri):
+    def __init__(self, username: object, password: object, app_id: object, full_name: object, uri: object):
+        """
+
+        :param username:
+        :param password:
+        :param app_id:
+        :param full_name:
+        :param uri:
+
+        """
+
         self.username = username
         self.password = password
         self.uri = uri
@@ -22,7 +31,15 @@ class MCommClient:
         self.full_name = full_name
         self.auth = self._get_auth_token()
 
-    def _get_auth_token(self):
+    def _get_auth_token(self) -> dict:
+
+        """
+
+        Returns Authorization Token for use when accessing MCommunity Resources.
+
+        :rtype: Json
+
+        """
         token_uri = f'{self.uri}/token/'
         token_body = {'username': self.username, 'password': self.password}
         response = requests.post(token_uri, data=token_body)
@@ -30,11 +47,23 @@ class MCommClient:
         access_token = response.json().get('access')
         return {'Authorization': f'Bearer {access_token}'}
 
-    def group(self, group):
+    def group(self, group: object) -> object:
+        """
+
+        :rtype: object
+        :param group:
+        :return:
+        """
         return self.Group(self, group)
 
     class Group:
-        def __init__(self, mcommclient, mcomm_group=''):
+        def __init__(self, mcommclient: object, mcomm_group: object = ''):
+            """
+
+            :param mcommclient:
+            :param mcomm_group:
+            :rtype: object
+            """
             self.exists = False
             self.group_name = mcomm_group
             self.mcommclient = mcommclient
@@ -42,6 +71,9 @@ class MCommClient:
             self._get_group_info()
 
         def _get_group_info(self):
+            """
+            Gets info for group.
+            """
             response = requests.get(self.group_uri, headers=self.mcommclient.auth)
             if response.status_code == 200:
                 self.exists = True
@@ -54,12 +86,21 @@ class MCommClient:
                 self.memberGroups = [group.split(',')[0].split('=')[1] for group in group_data.get('groupMember', '') if
                                      'cn=' in group]
 
-        def _update_attribute(self, attribute_name, data):
+        def _update_attribute(self, attribute_name: object, data: object):
+            """
+            Takes in an attribute_name and data payload for update.
+
+            :param attribute_name:
+            :param data:
+            """
             response = requests.post(f'{self.group_uri}{attribute_name}/', headers=self.mcommclient.auth, data=data)
             if response.status_code != 200:
                 raise (MCommError(response))
 
         def update_aliases(self):
+            """
+            adds an alias to an MCommunity group if the alias does not exist.
+            """
             group_data = requests.get(self.group_uri, headers=self.mcommclient.auth).json()
             og_aliases = group_data.get('cn', '')
             for alias in self.aliases:
@@ -67,6 +108,9 @@ class MCommClient:
                     self._update_attribute('cn', {'add': [alias]})
 
         def update_ownership(self):
+            """
+            Checks if new owner is a group or user and than adds it to MCommunity
+            """
             group_data = requests.get(self.group_uri, headers=self.mcommclient.auth).json()
             og_owners = [owner.split(',')[0].split('=')[1] for owner in group_data['owner']]
             for owner in self.owners:
@@ -76,6 +120,9 @@ class MCommClient:
                     self._update_attribute('owner', {'add': f'uid={owner},ou=People,dc=umich,dc=edu'})
 
         def update_membership(self):
+            """
+            Checks if new members are already exist and if they do not than the member is added based on it's type
+            """
             group_data = requests.get(self.group_uri, headers=self.mcommclient.auth).json()
             og_external = group_data.get('rfc822mail', [])
             og_member_groups = [group.split(',')[0].split('=')[1] for group in group_data.get('groupMember', '') if
@@ -94,6 +141,9 @@ class MCommClient:
                                            {'add': f'cn={member},ou=User Groups,ou=Groups,dc=umich,dc=edu'})
 
         def reserve(self):
+            """
+            Reserve's a Group before adding parameters
+            """
             group_data = {
                 'cn': f'{self.mcommclient.full_name}',
                 'umichGroupEmail': f'{self.group_name}',
