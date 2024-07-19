@@ -1,6 +1,6 @@
 from unittest.mock import patch, Mock, call
 
-import pytest
+import pytest, requests
 
 from mcommunity_collab_driver.mcommunity import MCommClient, MCommError
 
