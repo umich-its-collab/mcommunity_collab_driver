@@ -4,7 +4,7 @@ setup(
     name='mcommunity_collab_driver',
     packages=find_packages(include=['mcommunity_collab_driver']),
     description='Python library for using the MCommunity Gateway',
-    version='0.1.0',
+    version='0.1.01',
     author='Richard Sawoscinski',
     install_requires=['requests'],
     setup_requires=['pytest-runner'],
